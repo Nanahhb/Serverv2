@@ -1,0 +1,161 @@
+
+-- NANAHHB 🎀 EMPTY SERVER HOP
+-- ALL GAMES | ANDROID + PC
+-- Roblox Studio | LocalScript
+
+local Players = game:GetService("Players")
+local TeleportService = game:GetService("TeleportService")
+local UIS = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+local MAX_PLAYERS = 2
+local SEARCH_DELAY = 2
+
+-- Remove old GUI
+local old = playerGui:FindFirstChild("NanahhbEmptyServerHop")
+if old then old:Destroy() end
+
+-- Colors
+local PINK = Color3.fromRGB(255, 165, 200)
+local LIGHT = Color3.fromRGB(255, 246, 250)
+local TEXT = Color3.fromRGB(190, 90, 135)
+
+-- GUI
+local gui = Instance.new("ScreenGui")
+gui.Name = "NanahhbEmptyServerHop"
+gui.ResetOnSpawn = false
+gui.Parent = playerGui
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.fromOffset(270, 190)
+frame.Position = UDim2.new(0.5, -135, 0.5, -95)
+frame.BackgroundColor3 = LIGHT
+frame.Parent = gui
+
+Instance.new("UICorner", frame).CornerRadius =
+    UDim.new(0, 16)
+
+local stroke = Instance.new("UIStroke")
+stroke.Color = PINK
+stroke.Thickness = 2
+stroke.Parent = frame
+
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 45)
+title.BackgroundTransparency = 1
+title.Text = "🎀 NANAHHB EMPTY HOP"
+title.TextColor3 = TEXT
+title.Font = Enum.Font.GothamBold
+title.TextSize = 16
+title.Parent = frame
+
+local status = Instance.new("TextLabel")
+status.Size = UDim2.new(1, -20, 0, 35)
+status.Position = UDim2.fromOffset(10, 55)
+status.BackgroundTransparency = 1
+status.Text = "Tìm Sever"
+status.TextColor3 = TEXT
+status.Font = Enum.Font.Gotham
+status.TextSize = 14
+status.Parent = frame
+
+local hop = Instance.new("TextButton")
+hop.Size = UDim2.new(0.85, 0, 0, 45)
+hop.Position = UDim2.new(0.075, 0, 0, 105)
+hop.BackgroundColor3 = PINK
+hop.Text = "🔍 FIND SERVER"
+hop.TextColor3 = Color3.new(1, 1, 1)
+hop.Font = Enum.Font.GothamBold
+hop.TextSize = 14
+hop.Parent = frame
+
+Instance.new("UICorner", hop).CornerRadius =
+    UDim.new(0, 12)
+
+local busy = false
+
+-- Backend integration point:
+-- Return a server instance ID with player count <= 2.
+-- Backend must be configured by the game developer.
+local function getServer()
+    return nil
+end
+
+local function findServer()
+    if busy then return end
+    busy = true
+
+    hop.Text = "SEARCHING..."
+    status.Text = "Tìm Sever"
+
+    local ok, serverId = pcall(getServer)
+
+    if ok and serverId then
+        status.Text = "Đã tìm thấy Sever!"
+        hop.Text = "TELEPORTING..."
+
+        local success, err = pcall(function()
+            TeleportService:TeleportToPlaceInstance(
+                game.PlaceId,
+                serverId,
+                player
+            )
+        end)
+
+        if not success then
+            warn(err)
+            status.Text = "Teleport failed!"
+        end
+    else
+        status.Text = "Đã hết sever"
+
+        task.wait(SEARCH_DELAY)
+
+        status.Text = "Tìm Sever"
+        hop.Text = "🔍 FIND SERVER"
+    end
+
+    busy = false
+end
+
+hop.Activated:Connect(findServer)
+
+-- Drag support: PC + Mobile
+local dragging = false
+local dragStart
+local startPos
+
+frame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+
+        dragging = true
+        dragStart = input.Position
+        startPos = frame.Position
+    end
+end)
+
+UIS.InputChanged:Connect(function(input)
+    if dragging and (
+        input.UserInputType == Enum.UserInputType.MouseMovement
+        or input.UserInputType == Enum.UserInputType.Touch
+    ) then
+        local delta = input.Position - dragStart
+
+        frame.Position = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
+    end
+end)
+
+UIS.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1
+        or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = false
+    end
+end)
